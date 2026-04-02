@@ -1,9 +1,8 @@
 ---
-name: future template
+name: issue template
 about: issue template
-title: ''
-labels: ''
-assignees: ''
+title: issue template
+labels: 🐛
 
 ---
 
