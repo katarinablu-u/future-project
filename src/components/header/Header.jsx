@@ -3,7 +3,7 @@ import logoUrl from "../../assets/images/kream_image.png"
 import homeUrl from "../../assets/icons/home_icon.png"
 import {useLocation, useNavigate} from "react-router-dom";
 
-// 대문자로 시작! -> 대문자를 컨포넌트로 인식하기 때문
+
 const LogoImage = styled.img`
     width: 166px;
     height: 141px;
@@ -47,7 +47,7 @@ export default function Header(){
     return(
         <div>
             <HeaderContainer>
-                <LogoImage src={logoUrl}/>
+                <LogoImage src={logoUrl} onClick={() => navigate("/")}/>
                 <HeaderRight>
                     {pathname === "/" && (
                         <Button onClick={()=>navigate("/add")}>{buttonName}</Button>
@@ -56,6 +56,5 @@ export default function Header(){
                 </HeaderRight>
             </HeaderContainer>
         </div>
-    );
+    );      
 }
-
