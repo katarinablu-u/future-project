@@ -1,121 +1,57 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from "react";
+import RootLayout from "./layout/RootLayout";
+import Main from "./pages/Main/Main";
+import ProductDetail from "./pages/ProductDetail/ProductDetail";
+import AddProduct from "./pages/AddProduct/AddProduct"; 
+import EditProduct from "./pages/EditProduct/EditProduct"; // 1. 수정 페이지 임포트
+import DeleteModal from "./components/DeleteModal";
+import { productData } from "./pages/Main/productDummy";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0)
+function AppContent() {
+  const [products, setProducts] = useState(productData);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [targetId, setTargetId] = useState(null);
+  const navigate = useNavigate(); 
+
+  const handleDelete = () => {
+    const updatedProducts = products.filter(p => Number(p.itemid) !== Number(targetId));
+    setProducts(updatedProducts);
+    setIsModalOpen(false);
+    navigate("/"); 
+  };
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <Routes>
+        <Route element={<RootLayout openModal={() => setIsModalOpen(true)} targetId={targetId} />}>
+          <Route path="/" element={<Main products={products} />} />
+          <Route 
+            path="/product/:id" 
+            element={<ProductDetail products={products} setTargetId={setTargetId} />} 
+          /> 
+          <Route path="/add" element={<AddProduct setProducts={setProducts} />} />
+          {/* 2. 수정 페이지 라우트 추가 (기존 스타일 유지 위해 제품 데이터 전달) */}
+          <Route 
+            path="/edit/:id" 
+            element={<EditProduct products={products} setProducts={setProducts} />} 
+          />
+        </Route>
+      </Routes>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      <DeleteModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onConfirm={handleDelete} 
+      />
     </>
-  )
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
