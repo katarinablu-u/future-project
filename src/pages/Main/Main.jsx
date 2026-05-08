@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { productData } from "./productDummy.js";
 import * as S from "./Main.style";
 import VectorIcon from "../../assets/icons/Vector.png";
-import FilterModal from "./FilterModal"; // 1. 새로 만든 모달 불러오기
+import FilterModal from "./FilterModal";
 
 export const FILTER_DATA = {
     "성별": [["남성", "여성", "남녀공용"]],
@@ -13,7 +12,6 @@ export const FILTER_DATA = {
     "종류": [["의류", "신발"]]  
 };
 
-// TopActionBar 부분
 const TopActionBar = ({ activeFilter, setActiveFilter, isSortOpen, setIsSortOpen, selectedSort, setSelectedSort }) => (
     <S.TopSection>
         <S.FilterBar>
@@ -24,15 +22,16 @@ const TopActionBar = ({ activeFilter, setActiveFilter, isSortOpen, setIsSortOpen
                 </S.FilterButton>
             ))}
         </S.FilterBar>
-        {/* ... 정렬 바 코드는 동일 ... */}
     </S.TopSection>
 );
 
-export default function Main() {
+export default function Main({ products }) { 
     const [activeFilter, setActiveFilter] = useState(null);
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [selectedSort, setSelectedSort] = useState("기본 정렬순");
     const navigate = useNavigate();
+
+    if (!products) return <div>로딩 중...</div>;
 
     return (
         <S.Container>
@@ -42,15 +41,10 @@ export default function Main() {
                 selectedSort={selectedSort} setSelectedSort={setSelectedSort}
             />
 
-            {/* 분리된 모달 사용(FILTER_DATA를 꼭 넘겨줘야 함) */}
-            <FilterModal 
-                filter={activeFilter} 
-                onClose={() => setActiveFilter(null)} 
-                FILTER_DATA={FILTER_DATA} 
-            />
+            <FilterModal filter={activeFilter} onClose={() => setActiveFilter(null)} FILTER_DATA={FILTER_DATA} />
 
             <S.ProductGrid>
-                {productData.map((item) => (
+                {products.map((item) => (
                     <S.ProductCard key={item.itemid} onClick={() => navigate(`/product/${item.itemid}`)}>
                         <S.ImageBox><img src={item.img} alt={item.name} /></S.ImageBox>
                         <S.ItemName>{item.name}</S.ItemName>
