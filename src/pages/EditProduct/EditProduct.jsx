@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import styled from "styled-components";
+// API 연동을 위해 추가
+import { getItemDetail, updateItem, deleteItem } from "../../api/shop";
 
-
+// --- 스타일 컴포넌트 (절대 수정 금지 - 그대로 유지) ---
 const AddContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -130,24 +132,22 @@ const SubmitBtn = styled.button`
   padding: 12px;
   border-radius: 8px;
   border: none;
-  background: #eee;
-  color: #666;
+  background: ${(props) => (props.$isDelete ? "#ff4d4d" : "#eee")};
+  color: ${(props) => (props.$isDelete ? "#fff" : "#666")};
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
-  &:hover { background: #e2e2e2; }
+  &:hover { background: ${(props) => (props.$isDelete ? "#e60000" : "#e2e2e2")}; }
 `;
 
 const GENDERS = ["남성", "여성", "남녀공용"];
 const COLORS = ["red", "pink", "blue", "gray", "black", "denim", "multi", "rainbow", "holographic"];
 
-// --- 메인 컴포넌트 ---
-export default function EditProduct({ products, setProducts }) {
+
+export default function EditProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  // 기존 정보를 담을 State
   const [name, setName] = useState("");
   const [rating, setRating] = useState("");
   const [reviews, setReviews] = useState("");
@@ -158,39 +158,66 @@ export default function EditProduct({ products, setProducts }) {
   const [selectedColor, setSelectedColor] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
 
-  // 데이터 로드: products 배열에서 id가 일치하는 상품 찾기
+  // 1. [GET] 데이터 로드: 서버에서 해당 id 상품 가져오기
   useEffect(() => {
-    const target = products.find((p) => String(p.itemid) === String(id));
-    if (target) {
-      setName(target.name);
-      setRating(target.rating);
-      setReviews(target.review);
-      setPrice(target.price);
-      setSize(target.size);
-      setCategory(target.category);
-      setGender(target.gender);
-      setSelectedColor(target.color);
-      setImagePreview(target.img);
-    }
-  }, [id, products]);
+    const fetchProduct = async () => {
+      try {
+        const data = await getItemDetail("clothes", id);
+        if (data) {
+          setName(data.name);
+          setRating(data.rating);
+          setReviews(data.reviews || data.review);
+          setPrice(data.price);
+          setSize(data.size);
+          setCategory(data.category || "의류");
+          setGender(data.gender === "male" ? "남성" : data.gender === "female" ? "여성" : "남녀공용");
+          setSelectedColor(data.color);
+          setImagePreview(data.image || data.img);
+        }
+      } catch (error) {
+        console.error("데이터 로드 실패:", error);
+      }
+    };
+    fetchProduct();
+  }, [id]);
 
-  const handleUpdate = () => {
+  // 2. [PUT] 수정 처리: API 명세서 고정값 포함
+  const handleUpdate = async () => {
     const updatedProduct = {
-      itemid: Number(id),
-      name,
+      image: imagePreview,
+      name: name,
+      rating: Number(rating),
+      reviews: Number(reviews),
       price: Number(price),
-      img: imagePreview,
-      review: reviews,
-      rating,
-      size,
-      category,
-      gender,
+      soldout: false, // 명세서 고정값
       color: selectedColor,
+      size: size,
+      gender: gender === "남성" ? "male" : gender === "여성" ? "female" : "unisex",
+      type: "shirt",  // 명세서 고정값
     };
 
-    setProducts(products.map((p) => (String(p.itemid) === String(id) ? updatedProduct : p)));
-    alert("수정이 완료되었습니다.");
-    navigate("/"); 
+    try {
+      await updateItem("clothes", id, updatedProduct);
+      alert("수정이 완료되었습니다.");
+      navigate("/");
+    } catch (error) {
+      console.error("수정 실패:", error);
+      alert("수정 처리 중 에러가 발생했습니다.");
+    }
+  };
+
+  // 3. [DELETE] 삭제 처리
+  const handleDelete = async () => {
+    if (window.confirm("정말 삭제하시겠습니까?")) {
+      try {
+        await deleteItem("clothes", id);
+        alert("삭제되었습니다.");
+        navigate("/");
+      } catch (error) {
+        console.error("삭제 실패:", error);
+        alert("삭제 중 에러가 발생했습니다.");
+      }
+    }
   };
 
   return (
@@ -252,9 +279,10 @@ export default function EditProduct({ products, setProducts }) {
             </ColorButtonGroup>
 
             <SubmitBtn type="button" onClick={handleUpdate}>상품 수정 완료</SubmitBtn>
+            <SubmitBtn type="button" $isDelete onClick={handleDelete}>상품 삭제</SubmitBtn>
           </FormBox>
         </RightSection>
       </ContentWrapper>
     </AddContainer>
   );
-}   
+}

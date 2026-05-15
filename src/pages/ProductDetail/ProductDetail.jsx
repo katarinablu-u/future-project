@@ -1,20 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import styled from "styled-components";
-
+import { getItems } from "../../api/shop";
 
 const DetailWrapper = styled.div`
   display: flex;
-  min-height: calc(100vh - 120px); /* 화면 전체 높이 확보 */
+  min-height: calc(100vh - 120px);
 `;
-
 
 const ImageSection = styled.div`
   flex: 1;
   display: flex;
-  justify-content: flex-end; /* 이미지를 중앙선 쪽으로 붙임 */
+  justify-content: flex-end;
   padding: 60px 100px;
-  border-right: 1px solid #ebebeb; /* 가운데 세로 구분선 */
+  border-right: 1px solid #ebebeb;
 `;
 
 const ProductImg = styled.img`
@@ -23,7 +22,6 @@ const ProductImg = styled.img`
   object-fit: cover;
 `;
 
-/* 오른쪽 정보 영역 */
 const InfoSection = styled.div`
   flex: 1;
   padding: 60px 100px;
@@ -52,30 +50,52 @@ const ReviewText = styled.p`
   gap: 4px;
 `;
 
-export default function ProductDetail({ products, setTargetId }) {
-    const { id } = useParams();
-    const product = products?.find(item => item.itemid === Number(id));
+export default function ProductDetail({ setTargetId }) {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        setTargetId(Number(id));
-        return () => setTargetId(null);
-    }, [id, setTargetId]);
+  useEffect(() => {
+    setTargetId(id);
 
-    if (!product) return <div style={{padding: "100px"}}>상품을 찾을 수 없습니다.</div>;
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        // 서버에서 'clothes' 카테고리 데이터 가져오기
+        const res = await getItems("clothes"); 
+        const data = res.data || res;
 
-    return (
-        <DetailWrapper>
-            {/* 왼쪽: 이미지 영역 */}
-            <ImageSection>
-                <ProductImg src={product.img} alt={product.name} />
-            </ImageSection>
+        // URL의 id와 서버 데이터의 id 매칭 (둘 다 문자열로 변환해서 비교)
+        const found = data.find((item) => String(item.id) === String(id));
+        setProduct(found);
+      } catch (error) {
+        console.error("데이터 로드 실패:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-            {/* 오른쪽: 상세 정보 영역 */}
-            <InfoSection>
-                <PriceText>{product.price.toLocaleString()}원</PriceText>
-                <NameText>{product.name}</NameText>
-                <ReviewText>★ 4.6 <span style={{marginLeft: "5px"}}>리뷰 {product.review.toLocaleString()}</span></ReviewText>
-            </InfoSection>
-        </DetailWrapper>
-    );
+    fetchProduct();
+
+    return () => setTargetId(null);
+  }, [id, setTargetId]);
+
+  if (loading) return <div style={{ padding: "100px" }}>로딩 중...</div>;
+  if (!product) return <div style={{ padding: "100px" }}>상품을 찾을 수 없습니다.</div>;
+
+  return (
+    <DetailWrapper>
+      <ImageSection>
+        <ProductImg src={product.image} alt={product.name} />
+      </ImageSection>
+      <InfoSection>
+        <PriceText>{Number(product.price).toLocaleString()}원</PriceText>
+        <NameText>{product.name}</NameText>
+        <ReviewText>
+          ★ {product.rating || "4.5"} 
+          <span style={{ marginLeft: "5px" }}>리뷰 {product.reviews?.toLocaleString()}</span>
+        </ReviewText>
+      </InfoSection>
+    </DetailWrapper>
+  );
 }

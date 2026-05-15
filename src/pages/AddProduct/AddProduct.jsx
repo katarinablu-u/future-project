@@ -38,7 +38,7 @@ const RightSection = styled.div`
   padding-left: 120px; 
 `;
 
-// 이미지 업로드 박스
+// 이미지 업로드 박스이름 통)
 const ImageUploadBox = styled.label`
   width: 450px;
   height: 550px;

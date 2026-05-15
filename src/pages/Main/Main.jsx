@@ -1,57 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getItems } from "../../api/shop";
 import { useNavigate } from "react-router-dom";
 import * as S from "./Main.style";
-import VectorIcon from "../../assets/icons/Vector.png";
-import FilterModal from "./FilterModal";
 
-export const FILTER_DATA = {
-    "성별": [["남성", "여성", "남녀공용"]],
-    "색상": [["red", "pink", "blue"], ["black", "gray", "denim"], ["multi", "rainbow", "holographic"]],
-    "사이즈": [["9", "10"], ["S", "M", "L", "XL"]],
-    "가격대": [["0~30", "31~60", "60~90"]],
-    "종류": [["의류", "신발"]]  
-};
-
-const TopActionBar = ({ activeFilter, setActiveFilter, isSortOpen, setIsSortOpen, selectedSort, setSelectedSort }) => (
-    <S.TopSection>
-        <S.FilterBar>
-            {Object.keys(FILTER_DATA).map((f) => (
-                <S.FilterButton key={f} onClick={() => setActiveFilter(f)}>
-                    {f}
-                    <img src={VectorIcon} alt="v" style={{ marginLeft: "8px", width: "10px" }} />
-                </S.FilterButton>
-            ))}
-        </S.FilterBar>
-    </S.TopSection>
-);
-
-export default function Main({ products }) { 
-    const [activeFilter, setActiveFilter] = useState(null);
-    const [isSortOpen, setIsSortOpen] = useState(false);
-    const [selectedSort, setSelectedSort] = useState("기본 정렬순");
+export default function Main() {
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    if (!products) return <div>로딩 중...</div>;
+    useEffect(() => {
+        const fetchItems = async () => {
+            try {
+                setLoading(true);
+                const res = await getItems("clothes");
+                let data = res.data || res;
+
+                if (!data || data.length === 0) {
+                    const res2 = await getItems("shirt");
+                    data = res2.data || res2;
+                }
+
+                if (Array.isArray(data)) {
+                    setItems(data.slice(0, 10));
+                }
+            } catch (error) {
+                console.error("데이터 로드 실패:", error);
+                setItems([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchItems();
+    }, []);
+
+    if (loading) return <S.Container>로딩 중...</S.Container>;
 
     return (
         <S.Container>
-            <TopActionBar 
-                activeFilter={activeFilter} setActiveFilter={setActiveFilter}
-                isSortOpen={isSortOpen} setIsSortOpen={setIsSortOpen}
-                selectedSort={selectedSort} setSelectedSort={setSelectedSort}
-            />
-
-            <FilterModal filter={activeFilter} onClose={() => setActiveFilter(null)} FILTER_DATA={FILTER_DATA} />
-
             <S.ProductGrid>
-                {products.map((item) => (
-                    <S.ProductCard key={item.itemid} onClick={() => navigate(`/product/${item.itemid}`)}>
-                        <S.ImageBox><img src={item.img} alt={item.name} /></S.ImageBox>
-                        <S.ItemName>{item.name}</S.ItemName>
-                        <S.Price>{item.price.toLocaleString()}원</S.Price>
-                        <S.ReviewCount>리뷰 {item.review}</S.ReviewCount>
-                    </S.ProductCard>
-                ))}
+                {items.length > 0 ? (
+                    items.map((item) => (
+                        <S.ProductCard key={item.id} onClick={() => navigate(`/product/${item.id}`)}>
+                            <S.ImageBox>
+                                <img src={item.image} alt={item.name} />
+                            </S.ImageBox>
+                            <S.ItemName>{item.name}</S.ItemName>
+                            <S.Price>{Number(item.price).toLocaleString()}원</S.Price>
+                            <S.ReviewCount>리뷰 {item.reviews}</S.ReviewCount>
+                        </S.ProductCard>
+                    ))
+                ) : (
+                    <div style={{ padding: "100px", textAlign: "center", width: "100%" }}>
+                        상품이 없습니다. /admin-init에서 등록해주세요.
+                    </div>
+                )}
             </S.ProductGrid>
         </S.Container>
     );
