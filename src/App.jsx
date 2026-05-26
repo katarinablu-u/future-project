@@ -14,7 +14,7 @@ function AppContent() {
   const [targetId, setTargetId] = useState(null);
   const navigate = useNavigate(); 
 
-  // [DELETE] 서버 데이터 삭제 연동
+  // [DELETE] 서버 데이터 삭제 연동임
   const handleDelete = async () => {
     try {
       // 명세서 규격에 맞춰 "clothes" 카테고리로 삭제 요청
